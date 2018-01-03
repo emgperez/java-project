@@ -33,7 +33,8 @@ pipeline {
        label 'apache'
      }
      steps {
-       sh "cp dist/rectangle_${env.BUILD_NUMBER}.jar /var/www/html/rectangles/all/"
+       sh "mkdir /var/www/html/rectangles/all/${env.BRANCH_NAME}"
+       sh "cp dist/rectangle_${env.BUILD_NUMBER}.jar /var/www/html/rectangles/all/${env.BRANCH_NAME}/"
      }
    }
    
@@ -42,7 +43,7 @@ pipeline {
        label 'CentOS'
      }
      steps {
-       sh "wget http://emgperez4.mylabserver.com/rectangles/all/rectangle_${env.BUILD_NUMBER}.jar"
+       sh "wget http://emgperez4.mylabserver.com/rectangles/all/${env.BRANCH_NAME}/rectangle_${env.BUILD_NUMBER}.jar"
        sh "java -jar rectangle_${env.BUILD_NUMBER}.jar 3 4"
      } 
    }
@@ -52,12 +53,26 @@ pipeline {
        docker 'openjdk:8u151-jre'
      }
      steps {
-       sh "wget http://emgperez4.mylabserver.com/rectangles/all/rectangle_${env.BUILD_NUMBER}.jar"
+       sh "wget http://emgperez4.mylabserver.com/rectangles/all/${env.BRANCH_NAME}/rectangle_${env.BUILD_NUMBER}.jar"
        sh "java -jar rectangle_${env.BUILD_NUMBER}.jar 3 4"
      }
    }
    
    stage('Promote to Green') {
+     agent {
+       label 'master'
+     }
+     when {
+       branch 'master'
+     }
+
+     steps {
+       sh "cp /var/www/html/rectangles/all/rectangle_${env.BUILD_NUMBER}.jar /var/www/html/rectangles/green/rectangle_${env.BUILD_NUMBER}.jar"
+       
+     }
+   }
+
+   stage('Promote development branch to master') {
      agent {
        label 'apache'
      }
@@ -66,10 +81,17 @@ pipeline {
      }
 
      steps {
-       sh "cp /var/www/html/rectangles/all/rectangle_${env.BUILD_NUMBER}.jar /var/www/html/rectangles/green/rectangle_${env.BUILD_NUMBER}.jar"
-       
-     }
+       echo "Stashing any local changes"
+       sh 'git stash'
+       echo "Checking out development branch"
+       sh 'git checkout development'
+       echo 'Checking out master branch'
+       sh 'git checkout master'
+       echo 'Merging development into master branch'
+       sh 'git merge development'
+       echo 'Pushing to origin master'
+       sh 'git push origin master'
+     } 
    }
   }
-
 }
