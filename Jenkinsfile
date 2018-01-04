@@ -72,7 +72,6 @@ pipeline {
 
      steps {
        sh "cp /var/www/html/rectangles/all/${env.BRANCH_NAME}/rectangle_${env.MAJOR_VERSION}.${env.BUILD_NUMBER}.jar /var/www/html/rectangles/green/rectangle_${env.MAJOR_VERSION}.${env.BUILD_NUMBER}.jar"
-       
      }
    }
 
@@ -89,6 +88,7 @@ pipeline {
        sh 'git stash'
        echo "Checking out development branch"
        sh 'git checkout development'
+       sh 'git pull origin'
        echo 'Checking out master branch'
        sh 'git checkout master'
        echo 'Merging development into master branch'
